@@ -1,12 +1,12 @@
 [package]
-name = "axum-inertia"
-version = "0.5.0"
+name = "inertia-loco"
+version = "0.1.0"
 edition = "2021"
-authors = ["Mikey Hoy <mjh@mjhoy.com>"]
+authors = ["Mason Stallmo <masonstallmo@hey.com>"]
 license = "MIT OR Apache-2.0"
-description = "An implementation of the Inertia.js protocol for Axum"
-repository = "https://github.com/mjhoy/axum-inertia"
-keywords = ["axum", "inertia"]
+description = "An implementation of the Inertia.js protocol for Loco"
+repository = "https://github.com/mstallmo/inertia-loco"
+keywords = ["loco", "inertia"]
 
 [dependencies]
 axum = "0.7.5"

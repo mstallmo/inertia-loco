@@ -1,4 +1,4 @@
-//! An implementation of the [inertia.js] protocol for [axum].
+//! An implementation of the [inertia.js] protocol for [loco].
 //!
 //! The basic idea is that any axum handler that accepts the `Inertia`
 //! struct as a function parameter is an inertia endpoint. For
@@ -133,7 +133,7 @@
 //! [Extractor]: https://docs.rs/axum/latest/axum/#extractors
 
 use async_trait::async_trait;
-use axum::extract::{FromRef, FromRequestParts};
+use axum::{extract::FromRequestParts, Extension};
 pub use config::InertiaConfig;
 use http::{request::Parts, HeaderMap, HeaderValue, StatusCode};
 use page::Page;
@@ -159,12 +159,20 @@ pub struct Inertia {
 impl<S> FromRequestParts<S> for Inertia
 where
     S: Send + Sync,
-    InertiaConfig: FromRef<S>,
 {
     type Rejection = (StatusCode, HeaderMap<HeaderValue>);
 
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
-        let config = InertiaConfig::from_ref(state);
+        use axum::RequestPartsExt;
+        let Extension(config) =
+            parts
+                .extract::<Extension<InertiaConfig>>()
+                .await
+                .map_err(|_err| {
+                    // TODO: log error to conosle
+                    (StatusCode::INTERNAL_SERVER_ERROR, HeaderMap::new())
+                })?;
+
         let request = Request::from_request_parts(parts, state).await?;
 
         // Respond with a 409 conflict if X-Inertia-Version values

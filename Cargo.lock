@@ -90,26 +90,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "axum-inertia"
-version = "0.5.0"
-dependencies = [
- "async-trait",
- "axum",
- "hex",
- "http 1.0.0",
- "http-body-util",
- "hyper 1.3.1",
- "indoc",
- "maud",
- "reqwest",
- "serde",
- "serde_json",
- "sha1",
- "tokio",
- "tower-http",
-]
-
-[[package]]
 name = "backtrace"
 version = "0.3.69"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -588,6 +568,26 @@ checksum = "c1cc9717a20b1bb222f333e6a92fd32f7d8a18ddc5a3191a11af45dcbf4dcd16"
 dependencies = [
  "autocfg",
  "scopeguard",
+]
+
+[[package]]
+name = "loco-inertia"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "axum",
+ "hex",
+ "http 1.0.0",
+ "http-body-util",
+ "hyper 1.3.1",
+ "indoc",
+ "maud",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "sha1",
+ "tokio",
+ "tower-http",
 ]
 
 [[package]]
