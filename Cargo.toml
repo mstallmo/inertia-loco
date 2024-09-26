@@ -9,19 +9,28 @@ repository = "https://github.com/mstallmo/inertia-loco"
 keywords = ["loco", "inertia"]
 
 [dependencies]
-axum = "0.7.5"
+anyhow = "1.0.89"
 async-trait = "0.1.74"
+axum = "0.7.5"
+hex = "0.4.3"
 http = "1.0.0"
 hyper = "1.0.1"
+# in-vite = "0.1.3"
+in-vite = { git = "https://github.com/mstallmo/in-vite", branch = "react" }
+loco-rs = "0.8.1"
+maud = "0.25.0"
 serde = { version = "1.0.189", features = ["derive"] }
 serde_json = "1.0.107"
-indoc = "2.0.4"
 sha1 = "0.10.6"
-hex = "0.4.3"
-maud = "0.25.0"
+tera = "1.20.0"
+tower-http = { version = "0.5.0", features = ["set-header", "trace"] }
+tracing = "0.1.40"
+
+[features]
+default = ["tera"]
+tera = ["in-vite/tera"]
 
 [dev-dependencies]
+http-body-util = "0.1.0"
 reqwest = "0.11.22"
 tokio = { version = "1.34.0", features = ["full"] }
-tower-http = { version = "0.5.0", features = ["set-header", "trace"] }
-http-body-util = "0.1.0"

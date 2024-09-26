@@ -4,10 +4,11 @@
 //! struct as a function parameter is an inertia endpoint. For
 //! instance:
 //!
-//! ```rust
-//! use axum_inertia::Inertia;
-//! use axum::{Json, response::IntoResponse};
+//! ```rust ignore
+//! use inertia_loco::Inertia;
+//! use loco_rs::prelude::*;
 //! use serde_json::json;
+//!
 //!
 //! async fn my_handler_fn(i: Inertia) -> impl IntoResponse {
 //!     i.render("Pages/MyPageComponent", json!({"myPageProps": "true"}))
@@ -17,56 +18,41 @@
 //! This does the following:
 //!
 //! - If the incoming request is the initial page load (i.e., does not
-//! have the `X-Inertia` header set to `true`), the
-//! [render](Inertia::render) method responds with an html page, which
-//! is configurable when setting up the initial Inertia state (see
-//! [Getting started](#getting-started) below).
+//!   have the `X-Inertia` header set to `true`), the
+//!   [render](Inertia::render) method responds with an html page, which
+//!   is configurable when setting up the initial Inertia state (see
+//!   [Getting started](#getting-started) below).
 //!
 //! - Otherwise, the handler responses with the standard inertia
-//! "Page" object json, with the included component and page props
-//! passed to [render](Inertia::render).
+//!   "Page" object json, with the included component and page props
+//!   passed to [render](Inertia::render).
 //!
 //! - If the request has a mismatching asset version (again, this is
-//! configurable), the handler responds with a `409 Conflict` to tell
-//! the client to reload the page. The function body of the handler is
-//! not executed in this case.
+//!   configurable), the handler responds with a `409 Conflict` to tell
+//!   the client to reload the page. The function body of the handler is
+//!   not executed in this case.
 //!
 //! # Getting started
 //!
-//! First, you'll need to provide your axum routes with
-//! [InertiaConfig] state. This state boils down to two things: an
-//! optional string representing the [asset version] and a function
-//! that takes serialized props and returns an HTML string for the
-//! initial page load.
+//! First, you'll need to provide your loco routes with
+//! [InertiaConfig] extension. This state boils down to two things: an
+//! optional string representing the [asset version] and an instance
+//! of a templating engine that will render the configured layout file.
 //!
-//! The [vite] module provides a convenient way to set up this state
-//! with [axum::Router::with_state]. For instance, the following code
-//! sets up a standard development server:
+//! The [initializer] module provides a convenient way to set up the
+//! [InertiaConfig] extension. If custom configuration for Inertia is
+//! reqiured it is recommended that you implement your own custom loco
+//! initializer in your application.
 //!
-//! ```rust
-//! use axum_inertia::{vite, Inertia};
-//! use axum::{Router, routing::get, response::IntoResponse};
-//!
-//! // Configuration for Inertia when using `vite dev`:
-//! let inertia = vite::Development::default()
-//!     .port(5173)
-//!     .main("src/main.ts")
-//!     .lang("en")
-//!     .title("My inertia app")
-//!     .into_config();
-//! let app: Router = Router::new()
-//!     .route("/", get(get_root))
-//!     .with_state(inertia);
-//!
-//! # async fn get_root(_i: Inertia) -> impl IntoResponse { "foo" }
-//! ```
+//! See [https://loco.rs/docs/extras/pluggability/#initializers](https://loco.rs/docs/extras/pluggability/#initializers)
+//! for more information on Loco initializers.
 //!
 //! The [Inertia] struct is then available as an axum [Extractor] and
 //! can be used in handlers like so:
 //!
-//! ```rust
-//! use axum::response::IntoResponse;
-//! # use axum_inertia::Inertia;
+//! ```rust ignore
+//! use loco::prelude::*;
+//! use inertia_loco::Inertia;
 //! use serde_json::json;
 //!
 //! async fn get_root(i: Inertia) -> impl IntoResponse {
@@ -79,75 +65,31 @@
 //! the name of the component to render, and the page props
 //! (serializable to json).
 //!
-//! Using the extractor in a handler *requires* that you use
-//! [axum::Router::with_state] to initialize Inertia in your
-//! routes. In fact, it won't compile if you don't!
-//!
-//! # Using InertiaConfig as substate
-//!
-//! It's likely you'll want other pieces of state beyond
-//! [InertiaConfig]. You'll just need to implement
-//! [axum::extract::FromRef] for your state type for
-//! [InertiaConfig]. For instance:
-//!
-//! ```rust
-//! use axum_inertia::{vite, Inertia, InertiaConfig};
-//! use axum::{Router, routing::get, extract::FromRef};
-//! # use axum::response::IntoResponse;
-//!
-//! #[derive(Clone)]
-//! struct AppState {
-//!     inertia: InertiaConfig,
-//!     name: String
-//! }
-//!
-//! impl FromRef<AppState> for InertiaConfig {
-//!     fn from_ref(app_state: &AppState) -> InertiaConfig {
-//!         app_state.inertia.clone()
-//!     }
-//! }
-//!
-//! let inertia = vite::Development::default()
-//!     .port(5173)
-//!     .main("src/main.ts")
-//!     .lang("en")
-//!     .title("My inertia app")
-//!     .into_config();
-//! let app_state = AppState { inertia, name: "foo".to_string() };
-//! let app: Router = Router::new()
-//!     .route("/", get(get_root))
-//!     .with_state(app_state);
-//!
-//! # async fn get_root(_i: Inertia) -> impl IntoResponse { "foo" }
-//! ```
-//!
-//! # Configuring development and production
-//!
-//! See the [vite] module for more information.
-//!
-//! [Router::with_state]: https://docs.rs/axum/latest/axum/struct.Router.html#method.with_state
 //! [asset version]: https://inertiajs.com/the-protocol#asset-versioning
 //! [inertia.js]: https://inertiajs.com
 //! [inertia.js protocol]: https://inertiajs.com/the-protocol
-//! [axum]: https://crates.io/crates/axum
+//! [loco]: https://crates.io/crates/loco
 //! [Extractor]: https://docs.rs/axum/latest/axum/#extractors
+//! [Initializer]: https://loco.rs/docs/extras/pluggability/#initializers
 
 use async_trait::async_trait;
 use axum::{extract::FromRequestParts, Extension};
-pub use config::InertiaConfig;
+pub use config::{InertiaConfig, InertiaConfigBuilder};
 use http::{request::Parts, HeaderMap, HeaderValue, StatusCode};
+pub use in_vite;
 use page::Page;
 use props::Props;
 use request::Request;
 use response::Response;
 
 pub mod config;
+pub mod initializer;
 mod page;
 pub mod partial;
 pub mod props;
 mod request;
 mod response;
-pub mod vite;
+mod tera;
 
 #[derive(Clone)]
 pub struct Inertia {
@@ -222,6 +164,7 @@ impl Inertia {
 mod tests {
     use super::*;
     use axum::{self, response::IntoResponse, routing::get, Router};
+    use loco_rs::environment::Environment;
     use reqwest::StatusCode;
     use serde_json::json;
     use tokio::net::TcpListener;
@@ -232,14 +175,14 @@ mod tests {
             i.render("foo!", json!({"bar": "baz"}))
         }
 
-        let layout =
-            Box::new(|props| format!(r#"<html><body><div id="app" data-page='{}'></div>"#, props));
-
-        let config = InertiaConfig::new(Some("123".to_string()), layout);
+        let config = InertiaConfigBuilder::new(Environment::Development)
+            .views_dir(&"test-assets")
+            .build()
+            .unwrap();
 
         let app = Router::new()
             .route("/test", get(handler))
-            .with_state(config);
+            .layer(Extension(config));
 
         let listener = TcpListener::bind("127.0.0.1:0")
             .await
@@ -254,12 +197,6 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(res.status(), StatusCode::OK);
-        assert_eq!(
-            res.headers()
-                .get("X-Inertia-Version")
-                .map(|h| h.to_str().unwrap()),
-            Some("123")
-        );
     }
 
     #[tokio::test]
@@ -268,14 +205,15 @@ mod tests {
             i.render("foo!", json!({"bar": "baz"}))
         }
 
-        let layout =
-            Box::new(|props| format!(r#"<html><body><div id="app" data-page='{}'></div>"#, props));
-
-        let inertia = InertiaConfig::new(Some("123".to_string()), layout);
+        let config = InertiaConfigBuilder::new(Environment::Production)
+            .views_dir(&"test-assets")
+            .vite_manifest_path(&"test-assets/.dist/manifest.json")
+            .build()
+            .unwrap();
 
         let app = Router::new()
             .route("/test", get(handler))
-            .with_state(inertia);
+            .layer(Extension(config));
 
         let listener = TcpListener::bind("127.0.0.1:0")
             .await

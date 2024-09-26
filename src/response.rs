@@ -6,7 +6,7 @@ use http::HeaderMap;
 /// An Inertia response.
 ///
 /// More information at:
-/// https://inertiajs.com/the-protocol#inertia-responses
+/// [https://inertiajs.com/the-protocol#inertia-responses](https://inertiajs.com/the-protocol#inertia-responses)
 pub struct Response {
     pub(crate) request: Request,
     pub(crate) page: Page,
@@ -19,11 +19,12 @@ impl IntoResponse for Response {
         if let Some(version) = &self.config.version() {
             headers.insert("X-Inertia-Version", version.parse().unwrap());
         }
+
         if self.request.is_xhr {
             headers.insert("X-Inertia", "true".parse().unwrap());
             (headers, Json(self.page)).into_response()
         } else {
-            let html = (self.config.layout())(serde_json::to_string(&self.page).unwrap());
+            let html = self.config.layout(&self.page).unwrap();
             (headers, Html(html)).into_response()
         }
     }
@@ -32,7 +33,9 @@ impl IntoResponse for Response {
 #[cfg(test)]
 mod tests {
     use http_body_util::BodyExt;
-    use indoc::formatdoc;
+    use loco_rs::environment::Environment;
+
+    use crate::InertiaConfigBuilder;
 
     use super::*;
 
@@ -49,21 +52,10 @@ mod tests {
             version: None,
         };
 
-        let layout = |props| {
-            formatdoc! {r#"
-            <html>
-            <head>
-            <title>Foo!</title>
-            </head>
-            <body>
-                <div id="app" data-page='{}'></div>
-            </body>
-            </html>
-        "#, props}
-            .to_string()
-        };
-
-        let config = InertiaConfig::new(Some("123".to_string()), Box::new(layout));
+        let config = InertiaConfigBuilder::new(Environment::Development)
+            .views_dir(&"test-assets")
+            .build()
+            .unwrap();
 
         let response = Response {
             request,
@@ -74,6 +66,7 @@ mod tests {
         let body = response.into_body().collect().await.unwrap().to_bytes();
         let body = String::from_utf8(body.into()).expect("decoded string");
 
-        assert!(body.contains(r#""props":{"test":"test"}"#));
+        // Since tera makes the HTML safe we have to check against `&quot;` instead of a literal "
+        assert!(body.contains(r#"&quot;props&quot;:{&quot;test&quot;:&quot;test&quot;}"#));
     }
 }
