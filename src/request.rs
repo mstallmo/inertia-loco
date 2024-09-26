@@ -5,7 +5,7 @@ use http::{request::Parts, HeaderMap, HeaderValue, StatusCode};
 
 /// Inertia-related information in the request.
 ///
-/// See more info here: https://inertiajs.com/the-protocol.
+/// See more info here: [https://inertiajs.com/the-protocol](https://inertiajs.com/the-protocol).
 #[derive(Clone, Debug)]
 pub(crate) struct Request {
     pub(crate) is_xhr: bool,
@@ -34,8 +34,8 @@ where
 {
     type Rejection = (StatusCode, HeaderMap<HeaderValue>);
 
-    async fn from_request_parts(mut parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
-        let original_uri = OriginalUri::from_request_parts(&mut parts, state)
+    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
+        let original_uri = OriginalUri::from_request_parts(parts, state)
             .await
             .unwrap_or_else(|e| match e {});
         let url = original_uri.0.path().to_string();
