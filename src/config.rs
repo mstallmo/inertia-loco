@@ -1,7 +1,7 @@
 use crate::tera::InertiaRootTag;
 use anyhow::{anyhow, Result};
 use hex::encode;
-use in_vite::{Vite, ViteMode, ViteOptions};
+use in_vite::{Vite, ViteMode, ViteOptions, ViteReactRefresh};
 use loco_rs::environment::Environment;
 use serde_json::to_value;
 use sha1::{Digest, Sha1};
@@ -87,7 +87,10 @@ impl InertiaConfig {
                 .expect("Failed to convert path to str"),
         );
         let vite = Vite::with_options(opts);
+        let vite_react_refresh = ViteReactRefresh::new(vite.host());
+
         tera.register_function("vite", vite);
+        tera.register_function("vite_react_refresh", vite_react_refresh);
     }
 
     fn register_inertia_root(tera: &mut Tera) {
