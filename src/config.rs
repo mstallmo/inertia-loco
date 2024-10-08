@@ -1,7 +1,7 @@
 use crate::tera::InertiaRootTag;
 use anyhow::{anyhow, Result};
 use hex::encode;
-use in_vite::{Vite, ViteOptions};
+use in_vite::{Vite, ViteMode, ViteOptions};
 use loco_rs::environment::Environment;
 use serde_json::to_value;
 use sha1::{Digest, Sha1};
@@ -15,6 +15,8 @@ use tera::Tera;
 const VIEWS_DIR: &str = "assets/views";
 
 struct Inner {
+    #[allow(dead_code)]
+    environment: Environment,
     version: Option<String>,
     tera: tera::Tera,
     application_layout: String,
@@ -32,16 +34,18 @@ impl InertiaConfig {
     /// page load. See the [crate::vite] module for an implementation
     /// of this for vite.
     pub fn new(
+        environment: Environment,
         views_dir: PathBuf,
         vite_manifest_path: PathBuf,
         application_layout: String,
         version: Option<String>,
     ) -> Result<InertiaConfig> {
         let mut tera = Self::init_tera(&views_dir)?;
-        Self::init_vite(&mut tera, &vite_manifest_path);
+        Self::init_vite(&environment, &mut tera, &vite_manifest_path);
         Self::register_inertia_root(&mut tera);
 
         let inner = Inner {
+            environment,
             version,
             tera,
             application_layout,
@@ -71,8 +75,13 @@ impl InertiaConfig {
         Ok(tera)
     }
 
-    fn init_vite(tera: &mut Tera, manifest_path: &Path) {
-        let opts = ViteOptions::default().manifest_path(
+    fn init_vite(environment: &Environment, tera: &mut Tera, manifest_path: &Path) {
+        let vite_mode = match environment {
+            Environment::Production => ViteMode::Production,
+            _ => ViteMode::Development,
+        };
+
+        let opts = ViteOptions::default().mode(vite_mode).manifest_path(
             manifest_path
                 .to_str()
                 .expect("Failed to convert path to str"),
@@ -154,6 +163,7 @@ impl InertiaConfigBuilder {
     pub fn build(self) -> Result<InertiaConfig> {
         match self.environment {
             Environment::Development => InertiaConfig::new(
+                self.environment,
                 self.views_dir,
                 self.vite_manifest_path,
                 self.application_layout,
@@ -162,6 +172,7 @@ impl InertiaConfigBuilder {
             _ => {
                 let version = self.hash_manifest()?;
                 InertiaConfig::new(
+                    self.environment,
                     self.views_dir,
                     self.vite_manifest_path,
                     self.application_layout,
