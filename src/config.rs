@@ -87,7 +87,7 @@ impl InertiaConfig {
                 .expect("Failed to convert path to str"),
         );
         let vite = Vite::with_options(opts);
-        let vite_react_refresh = ViteReactRefresh::new(vite.host());
+        let vite_react_refresh = ViteReactRefresh::new(vite.host(), vite.mode());
 
         tera.register_function("vite", vite);
         tera.register_function("vite_react_refresh", vite_react_refresh);
